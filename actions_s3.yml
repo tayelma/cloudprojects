@@ -1,0 +1,68 @@
+
+# Workflow name
+name: S3 Objects Upload CI
+
+# When to run: on pushes or pull requests to main
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Global environment variables
+env:
+  BUCKET_NAME: "githubactions-pl"
+  AWS_REGION: "us-east-1"
+
+# Permissions needed for OIDC role assumption and repo access
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build:
+    # Use the latest Ubuntu runner
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1Get a copy of your code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Give GitHub permission to talk to AWS
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: actions_S3
+          role-to-assume: arn:aws:iam::211125299414:role/GitHub_OIDC_Role
+
+      # Figure out which branch we're on
+      - name: Extract branch name
+        id: extract_branch
+        run: |
+          echo "branch=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+
+      # Remember the exact commit
+      - name: Extract commit hash
+        id: extract_hash
+        run: |
+          echo "commit_hash=${GITHUB_SHA}" >> $GITHUB_OUTPUT
+
+      # Zip up everything we want to send
+      - name: Zip project files
+        run: |
+          mkdir -p artifacts
+          zip -r ./artifacts/project.zip . -x node_modules/**\* .git/**\* dist/**\*
+
+      # Sync that zip file to S3 under branch/latest
+      - name: Sync to S3
+      - uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --acl private --follow-symlinks
+        env:
+          AWS_S3_BUCKET: ${{ env.BUCKET_NAME }}
+          AWS_REGION:     ${{ env.AWS_REGION }}
+          SOURCE_DIR:     ./artifacts
+          DEST_DIR:       branch-name/latest
+   
