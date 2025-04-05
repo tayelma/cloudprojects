@@ -57,7 +57,7 @@ jobs:
 
       # Sync that zip file to S3 under branch/latest
       - name: Sync to S3
-      - uses: jakejarvis/s3-sync-action@master
+        uses: jakejarvis/s3-sync-action@master
         with:
           args: --acl private --follow-symlinks
         env:
