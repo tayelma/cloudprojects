@@ -37,7 +37,7 @@ jobs:
           role-session-name: actions_S3
           role-to-assume: arn:aws:iam::211125299414:role/GitHub_OIDC_Role
 
-      # Figure out which branch we're on
+      # Figure out which projrect branch
       - name: Extract branch name
         id: extract_branch
         run: |
@@ -49,7 +49,7 @@ jobs:
         run: |
           echo "commit_hash=${GITHUB_SHA}" >> $GITHUB_OUTPUT
 
-      # Zip up everything we want to send
+      # Zip up objects to be uploaded
       - name: Zip project files
         run: |
           mkdir -p artifacts
